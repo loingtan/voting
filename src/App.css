@@ -76,8 +76,15 @@ figcaption {
     justify-content: center;
 }
 
+@media (max-width: 364px) {
+    .App {
+        width: 100%;
+    }
+}
+
 .big-image img {
     max-width: 100%;
+
     height: auto;
     flex: 1 1 auto;
     object-fit: cover;
@@ -85,10 +92,12 @@ figcaption {
 
 .problem-images {
     display: grid;
+
     grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
     gap: 10px;
     margin-bottom: 20px;
 }
+
 
 .big-image {
     width: 350px;
