@@ -169,6 +169,7 @@ const App = () => {
         }
         fetch("https://send.pageclip.co/0hZmsxu9symwGpEjCkpy6kKAjINn5Yr4", {
             method: "POST",
+            mode: "no-cors",
             headers: {
                 "Content-Type": "application/json",
             },
@@ -177,16 +178,12 @@ const App = () => {
                 version: "v1"
             }),
         })
-            .then((response) => {
-                if (response.ok) {
-                    alert("Form submitted successfully!");
-                    setIsLoading(false);
-                    setVotes({})
-                    setCurrentSlide(0);
-                    window.scrollTo(0, 0);
-                } else {
-                    alert("Error submitting form.");
-                }
+            .then(() => {
+                alert("Form submitted successfully!");
+                setIsLoading(false);
+                setVotes({})
+                setCurrentSlide(0);
+                window.scrollTo(0, 0);
             })
             .catch((error) => {
                 setIsLoading(false);
