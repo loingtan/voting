@@ -167,7 +167,7 @@ const App = () => {
             setIsLoading(false);
             return;
         }
-        fetch("https://send.pageclip.co/9J2xbukkJwaGSwuS7P1qArPNrwesn3R3", {
+        fetch("https://send.pageclip.co/0hZmsxu9symwGpEjCkpy6kKAjINn5Yr4", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
