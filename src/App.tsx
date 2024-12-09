@@ -1,4 +1,5 @@
 import React, {useCallback, useEffect, useState} from "react";
+import { useLocalStorage } from "./hooks/useLocalStorage";
 import "./App.css";
 import useReadFileFromPublic from "./hooks/useReadFileFromPublic.ts";
 import useImage from "./hooks/useImage.ts";
@@ -45,11 +46,14 @@ interface IProperty {
 }
 
 const App = () => {
-    const [currentSlide, setCurrentSlide] = useState(0);
-    const [votes, setVotes] = useState<IUser>({});
-    const [isLoading, setIsLoading] = useState(false); //
+    const [currentSlide, setCurrentSlide] = useLocalStorage("currentSlide", 0);
+    const [votes, setVotes] = useLocalStorage<IUser>("votes", {});
+    const [isLoading, setIsLoading] = useState(false);
+    const [userType, setUserType] = useLocalStorage<"Novice" | "Expert" | null>("user-type", null);
+    const [pageBegin, setPageBegin] = useLocalStorage("page-begin",false);
     const content = useReadFileFromPublic();
     const problemName = content[currentSlide]
+
     const objImage = useImage(problemName);
     const totalSlides = Math.ceil(content.length);
     const [shuffledImages, setShuffledImages] = useState<IProperty[]>([]);
@@ -58,7 +62,7 @@ const App = () => {
     }
 
     const shuffleArray = useCallback(<T, >(array: T[]): T[] => {
-        const shuffled = [...array]; // Create a copy to avoid mutating the original array
+        const shuffled = [...array];
         for (let i = shuffled.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
             [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
@@ -76,7 +80,6 @@ const App = () => {
                 img: objImage.image[name]
             }
         }
-
         return [
             returnPropertyAndImg(IMAGES.ourModel),
             returnPropertyAndImg(IMAGES.stableHair),
@@ -89,7 +92,7 @@ const App = () => {
     }, [objImage])
     useEffect(() => {
         setShuffledImages(shuffleArray(getCurrentImages()) as IProperty[]);
-        window.scrollTo({top: 0, behavior: "smooth"});
+        window.scrollTo({top: 0, behavior: "auto"});
     }, [currentSlide, objImage.image]);
 
 
@@ -108,6 +111,11 @@ const App = () => {
     }, [
         objImage
     ])
+    const handleSelection = (type: "Novice" | "Expert") => {
+        setUserType(type);
+        setPageBegin(true)
+        console.log(`User selected: ${type}`);
+    };
     const handleVote = (problem_name: string, title: string, model: string) => {
         setVotes((prevVotes) => {
             const currentProblemVotes = prevVotes[problem_name] || {};
@@ -119,7 +127,6 @@ const App = () => {
             };
             console.log(updatedProblemVotes)
             const cleanedProblemVotes = Object.fromEntries(
-                // eslint-disable-next-line @typescript-eslint/no-unused-vars
                 Object.entries(updatedProblemVotes).filter(([_, value]) => value !== undefined)
             );
 
@@ -142,6 +149,9 @@ const App = () => {
     const prevSlide = () => {
         if (currentSlide > 0) {
             setCurrentSlide(currentSlide - 1);
+        }
+        if (currentSlide === 0) {
+            setPageBegin(false);
         }
     };
     const validate = () => {
@@ -172,9 +182,11 @@ const App = () => {
             mode: "no-cors",
             headers: {
                 "Content-Type": "application/json",
+                "Accept": "application/vnd.pageclip.v1+json",
             },
             body: JSON.stringify({
                 ...votes,
+                user_level: userType,
                 version: "v1"
             }),
         })
@@ -182,6 +194,7 @@ const App = () => {
                 alert("Form submitted successfully!");
                 setIsLoading(false);
                 setVotes({})
+                localStorage.removeItem("votes");
                 setCurrentSlide(0);
                 window.scrollTo(0, 0);
             })
@@ -212,6 +225,27 @@ const App = () => {
 
         )
     }
+    if (!pageBegin) {
+        return (
+            <div className="selection-container">
+                <h1 className="title">Select Your Experience Level</h1>
+                <div className="button-container">
+                    <button
+                        className={`selection-button ${userType === "Novice" ? "active" : ""}`}
+
+                        onClick={() => handleSelection("Novice")}
+                    >
+                        Novice
+                    </button>
+                    <button
+                        className={`selection-button ${userType === "Expert" ? "active" : ""}`}
+                        onClick={() => handleSelection("Expert")}
+                    >
+                        Expert
+                    </button>
+                </div>
+            </div>)
+    }
     return (
         <div className="App">
             <form onSubmit={handleSubmit} className="pageclip-form">
@@ -220,16 +254,16 @@ const App = () => {
                 </header>
                 <div className="slides">
                     {getQuestionTitles().map((title, index1) => (
-                            <div key={index1}>
-                                <div className="title-problem">
-                                    {title}
-                                </div>
-                                <div className="real-images">
+                        <div key={index1}>
+                            <div className="title-problem">
+                                {title}
+                            </div>
+                            <div className="real-images">
 
-                                    {getRealImages().map((obj, index) => (
+                                {getRealImages().map((obj, index) => (
 
-                                        <figure className="image-container big-image" key={index}>
-                                            <img src={obj.img} alt="Voted option"/>
+                                    <figure className="image-container big-image" key={index}>
+                                    <img src={obj.img} alt="Voted option" key={index} loading={"lazy"}/>
                                             <figcaption>{obj.name}</figcaption>
                                         </figure>
 
@@ -241,7 +275,7 @@ const App = () => {
                                     {shuffledImages.map((obj, index) => (
                                         <figure className="image-container " key={index}>
 
-                                            <img src={obj.img} alt={`Option ${index + 1}`}/>
+                                            <img src={obj.img} alt={`Option ${index + 1}`} loading={"lazy"}/>
                                             <figcaption>{obj.name}</figcaption>
 
                                             <button
@@ -261,25 +295,23 @@ const App = () => {
 
                 </div>
                 <div className="navigation">
-                    <button onClick={prevSlide} disabled={currentSlide === 0} type={"button"}>
+                    <button onClick={prevSlide} type={"button"}>
                         Previous
                     </button>
+                    <button type={"submit"} onClick={(e) => {
+                        const userConfirmed = window.confirm("Are you sure you want to submit?");
+                        if (!userConfirmed) {
+                            e.preventDefault();
+                        }
+                    }}>
+                        {"Submit"}
+                    </button>
                     <button
-                        type={currentSlide < totalSlides - 1 ? "button" : "submit"}
-                        onClick={(e) => {
-                            if (currentSlide < totalSlides - 1) {
-                                e.preventDefault();
-                                nextSlide()
-
-                            } else {
-                                const userConfirmed = window.confirm("Are you sure you want to submit?");
-                                if (!userConfirmed) {
-                                    e.preventDefault();
-                                }
-                            }
-                        }}
+                        type={"button"}
+                        disabled={currentSlide === totalSlides - 1}
+                        onClick={nextSlide}
                     >
-                        {currentSlide < totalSlides - 1 ? "Next" : "Submit"}
+                        {"Next"}
                     </button>
                 </div>
                 <div className="progress-indicator">
