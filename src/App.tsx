@@ -1,8 +1,8 @@
 import React, {useCallback, useEffect, useState} from "react";
-import { useLocalStorage } from "./hooks/useLocalStorage";
 import "./App.css";
 import useReadFileFromPublic from "./hooks/useReadFileFromPublic.ts";
 import useImage from "./hooks/useImage.ts";
+import useSessionStorage from "./hooks/useSession.ts";
 
 const questionNumberTitles = [
     "Which photo looks the most natural?",
@@ -46,11 +46,11 @@ interface IProperty {
 }
 
 const App = () => {
-    const [currentSlide, setCurrentSlide] = useLocalStorage("currentSlide", 0);
-    const [votes, setVotes] = useLocalStorage<IUser>("votes", {});
+    const [currentSlide, setCurrentSlide] = useSessionStorage("currentSlide", 0);
+    const [votes, setVotes] = useSessionStorage<IUser>("votes", {});
     const [isLoading, setIsLoading] = useState(false);
-    const [userType, setUserType] = useLocalStorage<"Novice" | "Expert" | null>("user-type", null);
-    const [pageBegin, setPageBegin] = useLocalStorage("page-begin",false);
+    const [userType, setUserType] = useSessionStorage<"Novice" | "Expert" | null>("user-type", null);
+    const [pageBegin, setPageBegin] = useSessionStorage("page-begin",false);
     const content = useReadFileFromPublic();
     const problemName = content[currentSlide]
 
@@ -117,7 +117,7 @@ const App = () => {
         console.log(`User selected: ${type}`);
     };
     const handleVote = (problem_name: string, title: string, model: string) => {
-        setVotes((prevVotes) => {
+        setVotes((prevVotes: IUser) => {
             const currentProblemVotes = prevVotes[problem_name] || {};
             const currentValue = currentProblemVotes[title];
 
@@ -194,7 +194,9 @@ const App = () => {
                 alert("Form submitted successfully!");
                 setIsLoading(false);
                 setVotes({})
-                localStorage.removeItem("votes");
+                sessionStorage.removeItem("currentSlide");
+                sessionStorage.removeItem("votes");
+                sessionStorage.removeItem("shuffled-content");
                 setCurrentSlide(0);
                 window.scrollTo(0, 0);
             })
