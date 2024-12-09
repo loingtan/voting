@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import raw from "/question-order.txt";
+import { useLocalStorage } from "./useLocalStorage";
 
 function useReadFileFromPublic() {
-    const [fileContent, setFileContent] = useState('');
-    const [shuffledContent, setShuffledContent] = useState<string[]>(['']);
+    const [fileContent, setFileContent] = useLocalStorage("file-content", '');
+    const [shuffledContent, setShuffledContent] = useState<string[]>([]);
 
     useEffect(() => {
         fetch(raw)
@@ -22,18 +23,26 @@ function useReadFileFromPublic() {
     }, []);
 
     useEffect(() => {
-
         const isPageRefreshed = localStorage.getItem("isPageRefreshed");
 
         if (!isPageRefreshed && fileContent) {
             const lines = fileContent.split(/\r?\n/);
-            const shuffled = shuffleArray(lines).slice(0, 30);
+
+
+            const selectedLines = lines.length > 30 ? getRandomLines(lines, 30) : lines;
+
+
+            const shuffled = shuffleArray(selectedLines);
             setShuffledContent(shuffled);
             localStorage.setItem("isPageRefreshed", "true");
         } else if (fileContent) {
-            setShuffledContent(fileContent.split(/\r?\n/).slice(0, 30));
-        }
+            const lines = fileContent.split(/\r?\n/);
 
+
+            const selectedLines = lines.length > 30 ? getRandomLines(lines, 30) : lines;
+
+            setShuffledContent(selectedLines);
+        }
 
         return () => {
             localStorage.removeItem("isPageRefreshed");
@@ -42,6 +51,11 @@ function useReadFileFromPublic() {
 
     const shuffleArray = (array: string[]) => {
         return array.sort(() => Math.random() - 0.5);
+    };
+
+    const getRandomLines = (array: string[], n: number) => {
+        const shuffled = shuffleArray([...array]);
+        return shuffled.slice(0, n);
     };
 
     return shuffledContent;
