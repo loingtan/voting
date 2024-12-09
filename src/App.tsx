@@ -265,7 +265,7 @@ const App = () => {
                                 {getRealImages().map((obj, index) => (
 
                                     <figure className="image-container big-image" key={index}>
-                                    <img src={obj.img} alt="Voted option" key={index} loading={"lazy"}/>
+                                    <img src={obj.img} alt="Voted option" key={index} />
                                             <figcaption>{obj.name}</figcaption>
                                         </figure>
 
@@ -277,7 +277,7 @@ const App = () => {
                                     {shuffledImages.map((obj, index) => (
                                         <figure className="image-container " key={index}>
 
-                                            <img src={obj.img} alt={`Option ${index + 1}`} loading={"lazy"}/>
+                                            <img src={obj.img} alt={`Option ${index + 1}`} />
                                             <figcaption>{obj.name}</figcaption>
 
                                             <button
